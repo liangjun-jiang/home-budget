@@ -25,6 +25,9 @@ const TELL_CAT_FACT = 'tell.cat.fact';
 // API.AI parameter names
 const CATEGORY_ARGUMENT = 'category';
 
+const AMOUNT_ARGUMENT = 'amount';
+
+
 // API.AI Contexts/lifespans
 const FACTS_CONTEXT = 'choose_fact-followup';
 const CAT_CONTEXT = 'choose_cats-followup';
@@ -238,8 +241,9 @@ hear about?`, NO_INPUTS);
     let catFacts = app.data.catFacts ? new Set(app.data.catFacts) : CAT_FACTS;
     let fact = getRandomFact(catFacts);
 
-    amount = app.getArgument(CATEGORY_ARGUMENT);
-    console.log(`user's input: ${category}: ${amount}`);
+    amount = app.getArgument(AMOUNT_ARGUMENT);
+    const prettyAmount = JSON.stringify(amount);
+    console.log(`user's input: ${category}: ${prettyAmount} `);
 
     if (fact === null) {
       // Add facts context to outgoing context list
