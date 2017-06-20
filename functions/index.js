@@ -39,15 +39,12 @@ const FACT_TYPE = {
 
 const HISTORY_FACTS = new Set([
   'Google was founded in 1998.',
-  'Google was founded by Larry Page and Sergey Brin.',
-  'Google went public in 2004.',
-  'Google has more than 70 offices in more than 40 countries.'
+  'Google was founded by Larry Page and Sergey Brin.'
 ]);
 
 const HQ_FACTS = new Set([
   'Google\'s headquarters is in Mountain View, California.',
-  'Google has over 30 cafeterias in its main campus.',
-  'Google has over 10 fitness facilities in its main campus.'
+  'Google has over 30 cafeterias in its main campus.'
 ]);
 
 const CAT_FACTS = new Set([
@@ -64,18 +61,6 @@ const GOOGLE_IMAGES = [
   [
     'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Google_Logo.max-900x900.png',
     'Google logo'
-  ],
-  [
-    'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Dinosaur-skeleton-at-Google.max-900x900.jpg',
-    'Stan the Dinosaur at Googleplex'
-  ],
-  [
-    'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Wide-view-of-Google-campus.max-900x900.jpg',
-    'Googleplex'
-  ],
-  [
-    'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Bikes-on-the-Google-campus.2e16d0ba.fill-300x300.jpg',
-    'Biking at Googleplex'
   ]
 ];
 
@@ -95,6 +80,9 @@ const NO_INPUTS = [
   'If you\'re still there, say that again.',
   'We can stop here. See you soon.'
 ];
+
+let category = '';
+let amount = '$12.0';
 
 // This sample uses a sound clip from the Actions on Google Sound Library
 // https://developers.google.com/actions/tools/sound-library
@@ -160,6 +148,9 @@ Google's history or its headquarters. Which do you want to hear about?`,
     }
 
     let factCategory = app.getArgument(CATEGORY_ARGUMENT);
+    category = factCategory;
+
+    console.log(`user selected: ${category}`);
 
     if (factCategory === FACT_TYPE.HISTORY) {
       let fact = getRandomFact(historyFacts);
@@ -246,6 +237,10 @@ hear about?`, NO_INPUTS);
   function tellCatFact (app) {
     let catFacts = app.data.catFacts ? new Set(app.data.catFacts) : CAT_FACTS;
     let fact = getRandomFact(catFacts);
+
+    amount = app.getArgument(CATEGORY_ARGUMENT);
+    console.log(`user's input: ${category}: ${amount}`);
+
     if (fact === null) {
       // Add facts context to outgoing context list
       app.setContext(FACTS_CONTEXT, DEFAULT_LIFESPAN, {});
