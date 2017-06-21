@@ -1,21 +1,11 @@
-// Copyright 2016, Google, Inc.
-// Licensed under the Apache License, Version 2.0 (the 'License');
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an 'AS IS' BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 'use strict';
 
 process.env.DEBUG = 'actions-on-google:*';
 const App = require('actions-on-google').ApiAiApp;
 const functions = require('firebase-functions');
+
+const admin = require('firebase-admin');
+admin.initializeApp(functions.config().firebase);
 
 // API.AI actions
 const UNRECOGNIZED_DEEP_LINK = 'deeplink.unknown';
@@ -24,9 +14,11 @@ const TELL_CAT_FACT = 'tell.cat.fact';
 
 // API.AI parameter names
 const CATEGORY_ARGUMENT = 'category';
-
 const AMOUNT_ARGUMENT = 'amount';
+const CURRENCY_ARGUMENT = 'currency';
 
+// DATASTORE  
+const DATA_STORE_NAME = 'expense';
 
 // API.AI Contexts/lifespans
 const FACTS_CONTEXT = 'choose_fact-followup';
@@ -244,6 +236,16 @@ hear about?`, NO_INPUTS);
     amount = app.getArgument(AMOUNT_ARGUMENT);
     const prettyAmount = JSON.stringify(amount);
     console.log(`user's input: ${category}: ${prettyAmount} `);
+
+    const item = {
+      CATEGORY_ARGUMENT: category,
+      AMOUNT_ARGUMENT: amount.amount,
+      CURRENCY_ARGUMENT: amount.currency
+    };
+
+    admin.database().ref(`${DATA_STORE_NAME}`).push(item).then(snapshot => {
+      console.log('write datastore finished');
+    });
 
     if (fact === null) {
       // Add facts context to outgoing context list
