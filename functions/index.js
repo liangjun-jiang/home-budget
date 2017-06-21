@@ -1,21 +1,11 @@
-// Copyright 2016, Google, Inc.
-// Licensed under the Apache License, Version 2.0 (the 'License');
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an 'AS IS' BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 'use strict';
 
 process.env.DEBUG = 'actions-on-google:*';
 const App = require('actions-on-google').ApiAiApp;
 const functions = require('firebase-functions');
+
+const admin = require('firebase-admin');
+admin.initializeApp(functions.config().firebase);
 
 // API.AI actions
 const UNRECOGNIZED_DEEP_LINK = 'deeplink.unknown';
@@ -24,6 +14,11 @@ const TELL_CAT_FACT = 'tell.cat.fact';
 
 // API.AI parameter names
 const CATEGORY_ARGUMENT = 'category';
+const AMOUNT_ARGUMENT = 'amount';
+const CURRENCY_ARGUMENT = 'currency';
+
+// DATASTORE  
+const DATA_STORE_NAME = 'expense';
 
 // API.AI Contexts/lifespans
 const FACTS_CONTEXT = 'choose_fact-followup';
@@ -39,15 +34,12 @@ const FACT_TYPE = {
 
 const HISTORY_FACTS = new Set([
   'Google was founded in 1998.',
-  'Google was founded by Larry Page and Sergey Brin.',
-  'Google went public in 2004.',
-  'Google has more than 70 offices in more than 40 countries.'
+  'Google was founded by Larry Page and Sergey Brin.'
 ]);
 
 const HQ_FACTS = new Set([
   'Google\'s headquarters is in Mountain View, California.',
-  'Google has over 30 cafeterias in its main campus.',
-  'Google has over 10 fitness facilities in its main campus.'
+  'Google has over 30 cafeterias in its main campus.'
 ]);
 
 const CAT_FACTS = new Set([
@@ -64,18 +56,6 @@ const GOOGLE_IMAGES = [
   [
     'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Google_Logo.max-900x900.png',
     'Google logo'
-  ],
-  [
-    'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Dinosaur-skeleton-at-Google.max-900x900.jpg',
-    'Stan the Dinosaur at Googleplex'
-  ],
-  [
-    'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Wide-view-of-Google-campus.max-900x900.jpg',
-    'Googleplex'
-  ],
-  [
-    'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Bikes-on-the-Google-campus.2e16d0ba.fill-300x300.jpg',
-    'Biking at Googleplex'
   ]
 ];
 
@@ -95,6 +75,9 @@ const NO_INPUTS = [
   'If you\'re still there, say that again.',
   'We can stop here. See you soon.'
 ];
+
+let category = '';
+let amount = '$12.0';
 
 // This sample uses a sound clip from the Actions on Google Sound Library
 // https://developers.google.com/actions/tools/sound-library
@@ -160,6 +143,9 @@ Google's history or its headquarters. Which do you want to hear about?`,
     }
 
     let factCategory = app.getArgument(CATEGORY_ARGUMENT);
+    category = factCategory;
+
+    console.log(`user selected: ${category}`);
 
     if (factCategory === FACT_TYPE.HISTORY) {
       let fact = getRandomFact(historyFacts);
@@ -246,6 +232,21 @@ hear about?`, NO_INPUTS);
   function tellCatFact (app) {
     let catFacts = app.data.catFacts ? new Set(app.data.catFacts) : CAT_FACTS;
     let fact = getRandomFact(catFacts);
+
+    amount = app.getArgument(AMOUNT_ARGUMENT);
+    const prettyAmount = JSON.stringify(amount);
+    console.log(`user's input: ${category}: ${prettyAmount} `);
+
+    const item = {
+      CATEGORY_ARGUMENT: category,
+      AMOUNT_ARGUMENT: amount.amount,
+      CURRENCY_ARGUMENT: amount.currency
+    };
+
+    admin.database().ref(`${DATA_STORE_NAME}`).push(item).then(snapshot => {
+      console.log('write datastore finished');
+    });
+
     if (fact === null) {
       // Add facts context to outgoing context list
       app.setContext(FACTS_CONTEXT, DEFAULT_LIFESPAN, {});
